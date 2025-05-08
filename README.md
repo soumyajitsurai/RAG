@@ -30,18 +30,23 @@ The manual is provided as a PDF with over 4,000 pages divided into 23 sections.
 
 Tech Stack
 ---------------------------------------------------------------------------------
+
+
 Large Language Model Runtime
-	•	llama-cpp-python (v0.2.45): Lightweight C++ backend for running LLaMA models locally with GPU acceleration (LLAMA_CUBLAS=on for CUDA support).
+----------------------------------
+•	llama-cpp-python (v0.2.45): Lightweight C++ backend for running LLaMA models locally with GPU acceleration (LLAMA_CUBLAS=on for CUDA support).
 
 Core Libraries
-	•	numpy, pandas: Data manipulation and numerical computing.
-	•	tiktoken: Tokenizer optimized for OpenAI-compatible models.
-	•	sentence-transformers: Embedding models for semantic search and retrieval.
+----------------------------------
+•	numpy, pandas: Data manipulation and numerical computing.
+•	tiktoken: Tokenizer optimized for OpenAI-compatible models.
+•	sentence-transformers: Embedding models for semantic search and retrieval.
 
 RAG Pipeline & Framework
-	•	langchain + langchain-community: Orchestration of RAG components, prompt chaining, agent workflows, and LLM integration.
-	•	chromadb: Vector database for fast semantic similarity search.
-	•	huggingface_hub: Model and dataset management from Hugging Face.
+-----------------------------------
+•	langchain + langchain-community: Orchestration of RAG components, prompt chaining, agent workflows, and LLM integration.
+•	chromadb: Vector database for fast semantic similarity search.
+•	huggingface_hub: Model and dataset management from Hugging Face.
 
 PDF Processing
 	•	pymupdf: Lightweight, high-speed PDF parser to extract structured text from medical or document-based sources.
