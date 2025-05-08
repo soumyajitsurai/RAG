@@ -45,7 +45,7 @@ Core Libraries
 RAG Pipeline & Framework
 -----------------------------------
 •	langchain + langchain-community: Orchestration of RAG components, prompt chaining, agent workflows, and LLM integration.
-•	chromadb: Vector database for fast semantic similarity search.
+•	chromaDB: Vector database for fast semantic similarity search.
 •	huggingface_hub: Model and dataset management from Hugging Face.
 
 PDF Processing
@@ -54,3 +54,17 @@ PDF Processing
 Model
 ---------------------------
 TheBloke/Mistral-7B-Instruct-v0.2-GGUF
+
+Workflow
+---------------------------
+1.	User Input: Natural language medical question.
+2.	Chunking: Medical docs split into relevant sections.
+3.	Embedding: Each chunk embedded via sentence-transformers.
+4.	Semantic Retrieval: ChromaDB fetches relevant chunks.
+5.	LLM Completion: LLAMA model generates grounded answers.
+6.	Response: Final response delivered to the user.
+
+![image](https://github.com/user-attachments/assets/b5389ee6-8e36-45b4-a87b-35103f89cd0a)
+
+
+   
