@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Create or update the Hugging Face Space from this directory.
+# Publish the static LCEL cheatsheet Space.
+# New Gradio cpu-basic Spaces require a PRO plan; static Spaces are free.
 # Requires: hf auth login  (write token)   https://huggingface.co/settings/tokens
 set -euo pipefail
 
@@ -17,16 +18,11 @@ if ! hf auth whoami >/dev/null 2>&1; then
   exit 1
 fi
 
-hf repos create "$SPACE_ID" --type space --space-sdk gradio --public --exist-ok
-hf upload "$SPACE_ID" "$HERE" --type space \
-  --commit-message "Deploy LCEL coding cheatsheet" \
-  --exclude ".venv/**" \
-  --exclude "__pycache__/**" \
-  --exclude ".git/**" \
-  --exclude "*.pyc"
+python3 "$HERE/export_catalog.py"
+hf repos create "$SPACE_ID" --type space --space-sdk static --public --exist-ok
+hf upload "$SPACE_ID" "$HERE/space-static" --type space \
+  --commit-message "Deploy LCEL coding cheatsheet"
 
 echo
-echo "Space: https://huggingface.co/spaces/${SPACE_ID}"
-echo "Optional secrets: hf spaces secrets add ${SPACE_ID} --secrets OPENAI_API_KEY=\$OPENAI_API_KEY"
-echo "                  hf spaces secrets add ${SPACE_ID} --secrets ANTHROPIC_API_KEY=\$ANTHROPIC_API_KEY"
-echo "Logs: hf spaces logs ${SPACE_ID} --follow"
+echo "Hub:    https://huggingface.co/spaces/${SPACE_ID}"
+echo "Direct: https://${SPACE_ID/\//-}.static.hf.space/"
