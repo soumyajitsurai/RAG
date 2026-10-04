@@ -43,11 +43,13 @@ export ANTHROPIC_API_KEY=...       # optional
 python app.py
 ```
 
-## Space deploy
+## Space
+
+Live: https://huggingface.co/spaces/soumya-ai/lcel-coding-cheatsheet
+
+Hugging Face now requires a PRO plan for new Gradio `cpu-basic` Spaces. This app is published as a **static** Space (free) from `space-static/`. Local Gradio (`python app.py`) still runs the same catalog with in-process LCEL.
 
 ```bash
-hf repos create <namespace>/lcel-coding-cheatsheet --type space --space-sdk gradio --public
-hf upload <namespace>/lcel-coding-cheatsheet . --type space
+python export_catalog.py
+./deploy_space.sh
 ```
-
-Use **cpu-basic** hardware. This Space is an API-proxy / reference app, not a local GPU model.

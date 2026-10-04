@@ -1,0 +1,425 @@
+{
+  "categories": [
+    "All",
+    "Composition",
+    "Invocation",
+    "Prompts & Models",
+    "Parsing",
+    "Parallelism",
+    "Data shaping",
+    "Resilience",
+    "Routing",
+    "RAG",
+    "Agents & Tools",
+    "Configuration"
+  ],
+  "entries": [
+    {
+      "id": "pipe",
+      "title": "Pipe operator  |  (RunnableSequence)",
+      "category": "Composition",
+      "tags": [
+        "pipe",
+        "sequence",
+        "lcel",
+        "basic"
+      ],
+      "summary": "The `|` operator composes Runnables left-to-right. Output of each step is the input of the next.",
+      "when": "Any linear chain: prompt \u2192 model \u2192 parser, or retrieve \u2192 prompt \u2192 model.",
+      "openai": "from langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\n\nprompt = ChatPromptTemplate.from_messages([\n    (\"system\", \"You are a concise Python tutor.\"),\n    (\"human\", \"{question}\"),\n])\nmodel = ChatOpenAI(model=\"gpt-4o-mini\", temperature=0)\nchain = prompt | model | StrOutputParser()\n\nprint(chain.invoke({\"question\": \"What is LCEL in one sentence?\"}))\n",
+      "anthropic": "from langchain_anthropic import ChatAnthropic\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\n\nprompt = ChatPromptTemplate.from_messages([\n    (\"system\", \"You are a concise Python tutor.\"),\n    (\"human\", \"{question}\"),\n])\nmodel = ChatAnthropic(model=\"claude-3-5-haiku-latest\", temperature=0)\nchain = prompt | model | StrOutputParser()\n\nprint(chain.invoke({\"question\": \"What is LCEL in one sentence?\"}))\n",
+      "notes": "Equivalent explicit form: `RunnableSequence(prompt, model, parser)`. Prefer `|` for readability."
+    },
+    {
+      "id": "invoke-stream-batch",
+      "title": "invoke / stream / batch / ainvoke",
+      "category": "Invocation",
+      "tags": [
+        "invoke",
+        "stream",
+        "batch",
+        "async"
+      ],
+      "summary": "Every Runnable exposes the same execution API. Swap providers without changing call sites.",
+      "when": "Use invoke for one result, stream for tokens, batch for many inputs, ainvoke in async apps.",
+      "openai": "from langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\n\nchain = (\n    ChatPromptTemplate.from_template(\"Explain {topic} in 12 words.\")\n    | ChatOpenAI(model=\"gpt-4o-mini\")\n    | StrOutputParser()\n)\n\nchain.invoke({\"topic\": \"LCEL\"})\nfor token in chain.stream({\"topic\": \"RAG\"}):\n    print(token, end=\"\", flush=True)\nchain.batch([{\"topic\": \"prompts\"}, {\"topic\": \"parsers\"}])\n# await chain.ainvoke({\"topic\": \"fallbacks\"})\n",
+      "anthropic": "from langchain_anthropic import ChatAnthropic\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\n\nchain = (\n    ChatPromptTemplate.from_template(\"Explain {topic} in 12 words.\")\n    | ChatAnthropic(model=\"claude-3-5-haiku-latest\")\n    | StrOutputParser()\n)\n\nchain.invoke({\"topic\": \"LCEL\"})\nfor token in chain.stream({\"topic\": \"RAG\"}):\n    print(token, end=\"\", flush=True)\nchain.batch([{\"topic\": \"prompts\"}, {\"topic\": \"parsers\"}])\n# await chain.ainvoke({\"topic\": \"fallbacks\"})\n",
+      "notes": "`batch` fans out inputs (optionally with `config={'max_concurrency': N}`). Streaming yields string chunks after a StrOutputParser, or message chunks before it."
+    },
+    {
+      "id": "init-chat-model",
+      "title": "Provider-agnostic init_chat_model",
+      "category": "Prompts & Models",
+      "tags": [
+        "init_chat_model",
+        "openai",
+        "anthropic",
+        "portable"
+      ],
+      "summary": "One factory, two providers. Keep the rest of the LCEL graph unchanged.",
+      "when": "Apps that must switch OpenAI \u2194 Anthropic from env/config without rewriting chains.",
+      "openai": "from langchain.chat_models import init_chat_model\n\nmodel = init_chat_model(\"openai:gpt-4o-mini\", temperature=0)\n# model = init_chat_model(\"gpt-4o-mini\", model_provider=\"openai\")\n",
+      "anthropic": "from langchain.chat_models import init_chat_model\n\nmodel = init_chat_model(\"anthropic:claude-3-5-haiku-latest\", temperature=0)\n# model = init_chat_model(\"claude-3-5-haiku-latest\", model_provider=\"anthropic\")\n",
+      "notes": "Requires `langchain` plus the provider package (`langchain-openai` or `langchain-anthropic`). API keys still come from OPENAI_API_KEY / ANTHROPIC_API_KEY."
+    },
+    {
+      "id": "chat-prompt",
+      "title": "ChatPromptTemplate + MessagesPlaceholder",
+      "category": "Prompts & Models",
+      "tags": [
+        "prompt",
+        "messages",
+        "history",
+        "system"
+      ],
+      "summary": "Build chat messages declaratively. Placeholders accept chat history or tool results.",
+      "when": "Multi-turn chats, RAG answers that inject context, or any system+human+history pattern.",
+      "openai": "from langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder\nfrom langchain_core.messages import HumanMessage, AIMessage\n\nprompt = ChatPromptTemplate.from_messages([\n    (\"system\", \"Answer using only the provided context.\\n{context}\"),\n    MessagesPlaceholder(\"history\"),\n    (\"human\", \"{question}\"),\n])\nchain = prompt | ChatOpenAI(model=\"gpt-4o-mini\")\n\nchain.invoke({\n    \"context\": \"LCEL composes Runnables with |\",\n    \"history\": [\n        HumanMessage(content=\"What is a Runnable?\"),\n        AIMessage(content=\"A unit of work with invoke/stream/batch.\"),\n    ],\n    \"question\": \"How do I compose two of them?\",\n})\n",
+      "anthropic": "from langchain_anthropic import ChatAnthropic\nfrom langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder\nfrom langchain_core.messages import HumanMessage, AIMessage\n\nprompt = ChatPromptTemplate.from_messages([\n    (\"system\", \"Answer using only the provided context.\\n{context}\"),\n    MessagesPlaceholder(\"history\"),\n    (\"human\", \"{question}\"),\n])\nchain = prompt | ChatAnthropic(model=\"claude-3-5-haiku-latest\")\n\nchain.invoke({\n    \"context\": \"LCEL composes Runnables with |\",\n    \"history\": [\n        HumanMessage(content=\"What is a Runnable?\"),\n        AIMessage(content=\"A unit of work with invoke/stream/batch.\"),\n    ],\n    \"question\": \"How do I compose two of them?\",\n})\n",
+      "notes": "Use `MessagesPlaceholder('history', optional=True)` when history may be missing."
+    },
+    {
+      "id": "bind",
+      "title": "bind() \u2014 freeze call-time kwargs",
+      "category": "Prompts & Models",
+      "tags": [
+        "bind",
+        "stop",
+        "tools",
+        "temperature"
+      ],
+      "summary": "Attach default kwargs (stop sequences, tools, temperature) without wrapping the model.",
+      "when": "Reuse one model instance with different stop words, tools, or sampling settings per chain.",
+      "openai": "from langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate\n\nmodel = ChatOpenAI(model=\"gpt-4o-mini\")\nstopped = model.bind(stop=[\"\\n\\n\"])\njsonish = model.bind(temperature=0, response_format={\"type\": \"json_object\"})\n\nchain = ChatPromptTemplate.from_template(\"List 3 {item} names:\") | stopped\nprint(chain.invoke({\"item\": \"Runnable\"}))\n",
+      "anthropic": "from langchain_anthropic import ChatAnthropic\nfrom langchain_core.prompts import ChatPromptTemplate\n\nmodel = ChatAnthropic(model=\"claude-3-5-haiku-latest\")\nstopped = model.bind(stop_sequences=[\"\\n\\n\"])\nprecise = model.bind(temperature=0, max_tokens=256)\n\nchain = ChatPromptTemplate.from_template(\"List 3 {item} names:\") | stopped\nprint(chain.invoke({\"item\": \"Runnable\"}))\n",
+      "notes": "OpenAI uses `stop=`; Anthropic uses `stop_sequences=`. Everything downstream of `|` stays the same."
+    },
+    {
+      "id": "structured",
+      "title": "with_structured_output(Pydantic)",
+      "category": "Parsing",
+      "tags": [
+        "structured",
+        "pydantic",
+        "json",
+        "schema"
+      ],
+      "summary": "Force a typed object back from the model. Ideal for extraction and routing payloads.",
+      "when": "You need validated fields, not free-form prose.",
+      "openai": "from pydantic import BaseModel, Field\nfrom langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate\n\nclass Cheat(BaseModel):\n    concept: str\n    one_liner: str = Field(description=\"12 words or fewer\")\n    pitfall: str\n\nmodel = ChatOpenAI(model=\"gpt-4o-mini\").with_structured_output(Cheat)\nchain = ChatPromptTemplate.from_template(\"Summarize this LCEL idea: {idea}\") | model\nprint(chain.invoke({\"idea\": \"RunnableParallel fans out the same input\"}))\n",
+      "anthropic": "from pydantic import BaseModel, Field\nfrom langchain_anthropic import ChatAnthropic\nfrom langchain_core.prompts import ChatPromptTemplate\n\nclass Cheat(BaseModel):\n    concept: str\n    one_liner: str = Field(description=\"12 words or fewer\")\n    pitfall: str\n\nmodel = ChatAnthropic(model=\"claude-3-5-haiku-latest\").with_structured_output(Cheat)\nchain = ChatPromptTemplate.from_template(\"Summarize this LCEL idea: {idea}\") | model\nprint(chain.invoke({\"idea\": \"RunnableParallel fans out the same input\"}))\n",
+      "notes": "Both providers support tool/function calling under the hood. Prefer Pydantic v2 models with Field descriptions."
+    },
+    {
+      "id": "parsers",
+      "title": "Str / Json / Pydantic output parsers",
+      "category": "Parsing",
+      "tags": [
+        "parser",
+        "json",
+        "string"
+      ],
+      "summary": "Parsers are Runnables. Pipe them after the model to normalize message objects into data.",
+      "when": "Turning AIMessage \u2192 str/dict/model, or teaching the prompt to emit JSON.",
+      "openai": "from langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser, JsonOutputParser\nfrom pydantic import BaseModel\n\nclass Pair(BaseModel):\n    term: str\n    meaning: str\n\nparser = JsonOutputParser(pydantic_object=Pair)\nprompt = ChatPromptTemplate.from_messages([\n    (\"system\", \"Return JSON only.\\n{format_instructions}\"),\n    (\"human\", \"Define {term}\"),\n]).partial(format_instructions=parser.get_format_instructions())\n\nchain = prompt | ChatOpenAI(model=\"gpt-4o-mini\") | parser\nprint(chain.invoke({\"term\": \"RunnablePassthrough\"}))\n",
+      "anthropic": "from langchain_anthropic import ChatAnthropic\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser, JsonOutputParser\nfrom pydantic import BaseModel\n\nclass Pair(BaseModel):\n    term: str\n    meaning: str\n\nparser = JsonOutputParser(pydantic_object=Pair)\nprompt = ChatPromptTemplate.from_messages([\n    (\"system\", \"Return JSON only.\\n{format_instructions}\"),\n    (\"human\", \"Define {term}\"),\n]).partial(format_instructions=parser.get_format_instructions())\n\nchain = prompt | ChatAnthropic(model=\"claude-3-5-haiku-latest\") | parser\nprint(chain.invoke({\"term\": \"RunnablePassthrough\"}))\n",
+      "notes": "`StrOutputParser` is the usual last step for chat UIs. Prefer `with_structured_output` over JSON-in-the-prompt when the provider supports tools."
+    },
+    {
+      "id": "parallel",
+      "title": "RunnableParallel \u2014 fan-out the same input",
+      "category": "Parallelism",
+      "tags": [
+        "parallel",
+        "dict",
+        "fan-out"
+      ],
+      "summary": "A dict literal inside a pipe becomes RunnableParallel. Each branch sees the same input and runs concurrently.",
+      "when": "Retrieve + rewrite at once, or generate two views (joke + poem, summary + tags).",
+      "openai": "from langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\nfrom langchain_core.runnables import RunnableParallel\n\nmodel = ChatOpenAI(model=\"gpt-4o-mini\")\njoke = ChatPromptTemplate.from_template(\"Joke about {topic}\") | model | StrOutputParser()\npoem = ChatPromptTemplate.from_template(\"Two-line poem about {topic}\") | model | StrOutputParser()\n\nfanout = RunnableParallel(joke=joke, poem=poem)\n# shorthand inside a sequence:\n# {\"joke\": joke, \"poem\": poem}\nprint(fanout.invoke({\"topic\": \"vector databases\"}))\n",
+      "anthropic": "from langchain_anthropic import ChatAnthropic\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\nfrom langchain_core.runnables import RunnableParallel\n\nmodel = ChatAnthropic(model=\"claude-3-5-haiku-latest\")\njoke = ChatPromptTemplate.from_template(\"Joke about {topic}\") | model | StrOutputParser()\npoem = ChatPromptTemplate.from_template(\"Two-line poem about {topic}\") | model | StrOutputParser()\n\nfanout = RunnableParallel(joke=joke, poem=poem)\nprint(fanout.invoke({\"topic\": \"vector databases\"}))\n",
+      "notes": "Output is a dict of branch names. Downstream steps can pick keys with `itemgetter` or `.pick()`."
+    },
+    {
+      "id": "passthrough",
+      "title": "RunnablePassthrough + assign()",
+      "category": "Data shaping",
+      "tags": [
+        "passthrough",
+        "assign",
+        "merge"
+      ],
+      "summary": "Keep the original input while adding computed keys. Classic RAG glue.",
+      "when": "You have a raw question and need to attach retrieved context without losing the question.",
+      "openai": "from operator import itemgetter\nfrom langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\nfrom langchain_core.runnables import RunnablePassthrough, RunnableLambda\n\ndef fake_retriever(question: str) -> str:\n    return \"LCEL uses | to compose Runnables.\"\n\nprompt = ChatPromptTemplate.from_template(\n    \"Context: {context}\\nQuestion: {question}\\nAnswer:\"\n)\nchain = (\n    RunnablePassthrough.assign(context=RunnableLambda(fake_retriever))\n    | prompt\n    | ChatOpenAI(model=\"gpt-4o-mini\")\n    | StrOutputParser()\n)\n# input can be a string if the retriever + prompt agree,\n# or a dict: {\"question\": \"...\"} with itemgetter(\"question\")\nprint(chain.invoke(\"What is LCEL?\"))\n",
+      "anthropic": "from langchain_anthropic import ChatAnthropic\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\nfrom langchain_core.runnables import RunnablePassthrough, RunnableLambda\n\ndef fake_retriever(question: str) -> str:\n    return \"LCEL uses | to compose Runnables.\"\n\nprompt = ChatPromptTemplate.from_template(\n    \"Context: {context}\\nQuestion: {question}\\nAnswer:\"\n)\nchain = (\n    {\"question\": RunnablePassthrough(), \"context\": RunnableLambda(fake_retriever)}\n    | prompt\n    | ChatAnthropic(model=\"claude-3-5-haiku-latest\")\n    | StrOutputParser()\n)\nprint(chain.invoke(\"What is LCEL?\"))\n",
+      "notes": "`assign` merges new keys into the incoming dict. Bare `RunnablePassthrough()` forwards the input unchanged."
+    },
+    {
+      "id": "lambda",
+      "title": "RunnableLambda and @chain",
+      "category": "Data shaping",
+      "tags": [
+        "lambda",
+        "function",
+        "custom"
+      ],
+      "summary": "Wrap any Python function as a Runnable so it can sit inside a pipe.",
+      "when": "Light transforms: strip text, format docs, compute scores, call a helper.",
+      "openai": "from langchain_core.runnables import RunnableLambda, chain\n\nupper = RunnableLambda(lambda text: text.upper())\nprint(upper.invoke(\"lcel\"))\n\n@chain\ndef word_count(text: str) -> dict:\n    return {\"text\": text, \"n\": len(text.split())}\n\nprint(word_count.invoke(\"pipe parallel assign\"))\n# word_count is a full Runnable: .invoke / .batch / .stream work\n",
+      "anthropic": "from langchain_core.runnables import RunnableLambda, chain\n\n# Provider-agnostic \u2014 no model required\nnormalize = RunnableLambda(lambda d: {**d, \"question\": d[\"question\"].strip()})\n\n@chain\ndef clip(text: str) -> str:\n    return text[:240]\n\nprint(normalize.invoke({\"question\": \"  What is assign()?  \"}))\nprint(clip.invoke(\"x\" * 400))\n",
+      "notes": "Type hints improve input/output schemas. Raise normally; LCEL surfaces the exception from invoke."
+    },
+    {
+      "id": "pick-itemgetter",
+      "title": "pick() and itemgetter",
+      "category": "Data shaping",
+      "tags": [
+        "pick",
+        "itemgetter",
+        "keys"
+      ],
+      "summary": "Select a subset of dict keys before the next step. Keeps prompts from seeing extra fields.",
+      "when": "After RunnableParallel / assign you only want `context` + `question`.",
+      "openai": "from operator import itemgetter\nfrom langchain_core.runnables import RunnablePassthrough, RunnableLambda\n\nprep = (\n    RunnablePassthrough.assign(\n        context=RunnableLambda(lambda x: f\"docs for {x['question']}\"),\n        debug=RunnableLambda(lambda x: \"trace-id\"),\n    )\n    .pick([\"question\", \"context\"])\n)\nprint(prep.invoke({\"question\": \"What is pick?\"}))\n\n# or: itemgetter(\"question\") as a Runnable inside a dict\nroute = {\"q\": itemgetter(\"question\")}\n",
+      "anthropic": "from operator import itemgetter\nfrom langchain_core.runnables import RunnablePassthrough, RunnableLambda\n\n# Same shaping code \u2014 no provider lock-in\nprep = (\n    RunnablePassthrough.assign(\n        context=RunnableLambda(lambda x: f\"docs for {x['question']}\"),\n        debug=RunnableLambda(lambda x: \"trace-id\"),\n    )\n    .pick([\"question\", \"context\"])\n)\nprint(prep.invoke({\"question\": \"What is pick?\"}))\n",
+      "notes": "`itemgetter('k')` works as a Runnable in LCEL. `pick` is the fluent alternative on a Runnable."
+    },
+    {
+      "id": "fallbacks",
+      "title": "with_fallbacks \u2014 OpenAI then Anthropic",
+      "category": "Resilience",
+      "tags": [
+        "fallback",
+        "openai",
+        "anthropic",
+        "reliability"
+      ],
+      "summary": "If the primary model errors (rate limit, outage), LCEL tries the next Runnable.",
+      "when": "Production chains that must survive a single-provider failure.",
+      "openai": "from langchain_openai import ChatOpenAI\nfrom langchain_anthropic import ChatAnthropic\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\n\nprimary = ChatOpenAI(model=\"gpt-4o-mini\", max_retries=0)\nbackup = ChatAnthropic(model=\"claude-3-5-haiku-latest\")\nmodel = primary.with_fallbacks([backup])\n\nchain = (\n    ChatPromptTemplate.from_template(\"One fact about {topic}:\")\n    | model\n    | StrOutputParser()\n)\nprint(chain.invoke({\"topic\": \"LCEL fallbacks\"}))\n",
+      "anthropic": "from langchain_anthropic import ChatAnthropic\nfrom langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\n\nprimary = ChatAnthropic(model=\"claude-3-5-haiku-latest\", max_retries=0)\nbackup = ChatOpenAI(model=\"gpt-4o-mini\")\nmodel = primary.with_fallbacks([backup])\n\nchain = (\n    ChatPromptTemplate.from_template(\"One fact about {topic}:\")\n    | model\n    | StrOutputParser()\n)\nprint(chain.invoke({\"topic\": \"LCEL fallbacks\"}))\n",
+      "notes": "Fallbacks can be whole chains, not just models. Exceptions from the primary trigger the next option."
+    },
+    {
+      "id": "retry",
+      "title": "with_retry",
+      "category": "Resilience",
+      "tags": [
+        "retry",
+        "transient",
+        "errors"
+      ],
+      "summary": "Retry a Runnable on transient failures before giving up or falling back.",
+      "when": "429 / 5xx / timeout from a provider. Combine with fallbacks for layered resilience.",
+      "openai": "from langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate\n\nmodel = ChatOpenAI(model=\"gpt-4o-mini\").with_retry(\n    stop_after_attempt=3,\n    wait_exponential_jitter=True,\n)\nchain = ChatPromptTemplate.from_template(\"{q}\") | model\nchain.invoke({\"q\": \"Ping\"})\n",
+      "anthropic": "from langchain_anthropic import ChatAnthropic\nfrom langchain_core.prompts import ChatPromptTemplate\n\nmodel = ChatAnthropic(model=\"claude-3-5-haiku-latest\").with_retry(\n    stop_after_attempt=3,\n    wait_exponential_jitter=True,\n)\nchain = ChatPromptTemplate.from_template(\"{q}\") | model\nchain.invoke({\"q\": \"Ping\"})\n",
+      "notes": "Chat model clients already retry some HTTP errors. `with_retry` is useful around custom lambdas and whole sub-chains."
+    },
+    {
+      "id": "branch",
+      "title": "RunnableBranch \u2014 input-based routing",
+      "category": "Routing",
+      "tags": [
+        "branch",
+        "router",
+        "if",
+        "conditional"
+      ],
+      "summary": "Pick a sub-chain from predicates. First matching condition wins; else default.",
+      "when": "Cheap classifier or keyword gate before an expensive model call.",
+      "openai": "from langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\nfrom langchain_core.runnables import RunnableBranch, RunnableLambda\n\nmodel = ChatOpenAI(model=\"gpt-4o-mini\")\ncode = ChatPromptTemplate.from_template(\"Review this code:\\n{text}\") | model\ndocs = ChatPromptTemplate.from_template(\"Edit this sentence:\\n{text}\") | model\n\nrouter = RunnableBranch(\n    (lambda x: \"def \" in x[\"text\"] or \"class \" in x[\"text\"], code),\n    (lambda x: len(x[\"text\"]) < 40, RunnableLambda(lambda x: f\"echo: {x['text']}\")),\n    docs,  # default\n) | StrOutputParser()\n\nprint(router.invoke({\"text\": \"def pipe(a, b): return a | b\"}))\n",
+      "anthropic": "from langchain_anthropic import ChatAnthropic\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\nfrom langchain_core.runnables import RunnableBranch, RunnableLambda\n\nmodel = ChatAnthropic(model=\"claude-3-5-haiku-latest\")\ncode = ChatPromptTemplate.from_template(\"Review this code:\\n{text}\") | model\ndocs = ChatPromptTemplate.from_template(\"Edit this sentence:\\n{text}\") | model\n\nrouter = RunnableBranch(\n    (lambda x: \"def \" in x[\"text\"] or \"class \" in x[\"text\"], code),\n    (lambda x: len(x[\"text\"]) < 40, RunnableLambda(lambda x: f\"echo: {x['text']}\")),\n    docs,\n) | StrOutputParser()\n\nprint(router.invoke({\"text\": \"def pipe(a, b): return a | b\"}))\n",
+      "notes": "For LLM-based routing, classify first (`with_structured_output`) then branch on the label."
+    },
+    {
+      "id": "rag",
+      "title": "RAG chain (retriever + prompt + model)",
+      "category": "RAG",
+      "tags": [
+        "rag",
+        "retriever",
+        "passthrough",
+        "context"
+      ],
+      "summary": "The canonical LCEL RAG graph: parallel retrieve + pass question, then prompt | model | parse.",
+      "when": "Grounded Q&A over manuals, tickets, or any vector store \u2014 including this repo's medical RAG flow.",
+      "openai": "from langchain_openai import ChatOpenAI, OpenAIEmbeddings\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\nfrom langchain_core.runnables import RunnablePassthrough\nfrom langchain_community.vectorstores import Chroma\n\nvectorstore = Chroma.from_texts(\n    [\"LCEL composes Runnables with the pipe operator.\"],\n    embedding=OpenAIEmbeddings(),\n)\nretriever = vectorstore.as_retriever(search_kwargs={\"k\": 4})\nformat_docs = lambda docs: \"\\n\\n\".join(d.page_content for d in docs)\n\nprompt = ChatPromptTemplate.from_template(\n    \"Use the context to answer. If missing, say you do not know.\\n\"\n    \"Context:\\n{context}\\n\\nQuestion: {question}\"\n)\nrag = (\n    {\"context\": retriever | format_docs, \"question\": RunnablePassthrough()}\n    | prompt\n    | ChatOpenAI(model=\"gpt-4o-mini\")\n    | StrOutputParser()\n)\nprint(rag.invoke(\"How does LCEL compose steps?\"))\n",
+      "anthropic": "from langchain_anthropic import ChatAnthropic\nfrom langchain_openai import OpenAIEmbeddings  # or any Embeddings impl\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\nfrom langchain_core.runnables import RunnablePassthrough\nfrom langchain_community.vectorstores import Chroma\n\nvectorstore = Chroma.from_texts(\n    [\"LCEL composes Runnables with the pipe operator.\"],\n    embedding=OpenAIEmbeddings(),\n)\nretriever = vectorstore.as_retriever(search_kwargs={\"k\": 4})\nformat_docs = lambda docs: \"\\n\\n\".join(d.page_content for d in docs)\n\nprompt = ChatPromptTemplate.from_template(\n    \"Use the context to answer. If missing, say you do not know.\\n\"\n    \"Context:\\n{context}\\n\\nQuestion: {question}\"\n)\nrag = (\n    {\"context\": retriever | format_docs, \"question\": RunnablePassthrough()}\n    | prompt\n    | ChatAnthropic(model=\"claude-3-5-haiku-latest\")\n    | StrOutputParser()\n)\nprint(rag.invoke(\"How does LCEL compose steps?\"))\n",
+      "notes": "Embeddings provider and chat provider can differ. Retrievers are Runnables: `retriever | format_docs` is valid LCEL."
+    },
+    {
+      "id": "history",
+      "title": "RunnableWithMessageHistory",
+      "category": "Agents & Tools",
+      "tags": [
+        "memory",
+        "history",
+        "session"
+      ],
+      "summary": "Wrap a chat chain so LCEL injects/reads message history by session_id.",
+      "when": "Multi-turn coding assistants or support bots.",
+      "openai": "from langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder\nfrom langchain_core.runnables.history import RunnableWithMessageHistory\nfrom langchain_core.chat_history import InMemoryChatMessageHistory\n\nstore: dict = {}\n\ndef history_for(session_id: str) -> InMemoryChatMessageHistory:\n    if session_id not in store:\n        store[session_id] = InMemoryChatMessageHistory()\n    return store[session_id]\n\nprompt = ChatPromptTemplate.from_messages([\n    (\"system\", \"You are an LCEL coding reference.\"),\n    MessagesPlaceholder(\"history\"),\n    (\"human\", \"{input}\"),\n])\ninner = prompt | ChatOpenAI(model=\"gpt-4o-mini\")\nchat = RunnableWithMessageHistory(\n    inner,\n    history_for,\n    input_messages_key=\"input\",\n    history_messages_key=\"history\",\n)\ncfg = {\"configurable\": {\"session_id\": \"dev-1\"}}\nchat.invoke({\"input\": \"What is assign?\"}, config=cfg)\nchat.invoke({\"input\": \"Show a one-liner.\"}, config=cfg)\n",
+      "anthropic": "from langchain_anthropic import ChatAnthropic\nfrom langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder\nfrom langchain_core.runnables.history import RunnableWithMessageHistory\nfrom langchain_core.chat_history import InMemoryChatMessageHistory\n\nstore: dict = {}\n\ndef history_for(session_id: str) -> InMemoryChatMessageHistory:\n    return store.setdefault(session_id, InMemoryChatMessageHistory())\n\nprompt = ChatPromptTemplate.from_messages([\n    (\"system\", \"You are an LCEL coding reference.\"),\n    MessagesPlaceholder(\"history\"),\n    (\"human\", \"{input}\"),\n])\ninner = prompt | ChatAnthropic(model=\"claude-3-5-haiku-latest\")\nchat = RunnableWithMessageHistory(\n    inner, history_for,\n    input_messages_key=\"input\",\n    history_messages_key=\"history\",\n)\ncfg = {\"configurable\": {\"session_id\": \"dev-1\"}}\nchat.invoke({\"input\": \"What is assign?\"}, config=cfg)\n",
+      "notes": "Replace InMemoryChatMessageHistory with Redis/SQL history for production. Session id is required in `config`."
+    },
+    {
+      "id": "tools",
+      "title": "bind_tools + tool-calling loop",
+      "category": "Agents & Tools",
+      "tags": [
+        "tools",
+        "bind_tools",
+        "agent"
+      ],
+      "summary": "Expose Python functions to the model. Both OpenAI and Anthropic speak tool calls.",
+      "when": "Lookups, calculators, retrieval hops, or any side effect the model should request.",
+      "openai": "from langchain_openai import ChatOpenAI\nfrom langchain_core.tools import tool\nfrom langchain_core.messages import HumanMessage\n\n@tool\ndef add(a: int, b: int) -> int:\n    \"Add two integers.\"\n    return a + b\n\nmodel = ChatOpenAI(model=\"gpt-4o-mini\").bind_tools([add])\nmsg = model.invoke([HumanMessage(\"What is 21 + 21?\")])\nprint(msg.tool_calls)\n# then execute tools and call the model again with ToolMessage results\n",
+      "anthropic": "from langchain_anthropic import ChatAnthropic\nfrom langchain_core.tools import tool\nfrom langchain_core.messages import HumanMessage\n\n@tool\ndef add(a: int, b: int) -> int:\n    \"Add two integers.\"\n    return a + b\n\nmodel = ChatAnthropic(model=\"claude-3-5-haiku-latest\").bind_tools([add])\nmsg = model.invoke([HumanMessage(\"What is 21 + 21?\")])\nprint(msg.tool_calls)\n",
+      "notes": "For a full loop, use `create_agent` (LangChain) or LangGraph. `bind_tools` is the LCEL primitive underneath."
+    },
+    {
+      "id": "config",
+      "title": "config, tags, callbacks, with_config",
+      "category": "Configuration",
+      "tags": [
+        "config",
+        "tags",
+        "callbacks",
+        "run_name"
+      ],
+      "summary": "Pass runtime metadata into every step. Useful for LangSmith traces and per-request knobs.",
+      "when": "Naming runs, tagging environments, attaching callbacks, or setting recursion limits.",
+      "openai": "from langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate\n\nchain = (\n    ChatPromptTemplate.from_template(\"{q}\")\n    | ChatOpenAI(model=\"gpt-4o-mini\")\n).with_config({\"run_name\": \"lcel-demo\", \"tags\": [\"cheatsheet\"]})\n\nchain.invoke(\n    {\"q\": \"ping\"},\n    config={\"configurable\": {}, \"metadata\": {\"user\": \"dev\"}},\n)\n",
+      "anthropic": "from langchain_anthropic import ChatAnthropic\nfrom langchain_core.prompts import ChatPromptTemplate\n\nchain = (\n    ChatPromptTemplate.from_template(\"{q}\")\n    | ChatAnthropic(model=\"claude-3-5-haiku-latest\")\n).with_config({\"run_name\": \"lcel-demo\", \"tags\": [\"cheatsheet\"]})\n\nchain.invoke({\"q\": \"ping\"}, config={\"metadata\": {\"user\": \"dev\"}})\n",
+      "notes": "`configurable` fields are how `RunnableWithMessageHistory` and `configurable_fields` receive per-call values."
+    },
+    {
+      "id": "configurable-alt",
+      "title": "configurable_alternatives \u2014 swap models live",
+      "category": "Configuration",
+      "tags": [
+        "configurable",
+        "openai",
+        "anthropic",
+        "ab"
+      ],
+      "summary": "Declare OpenAI as default and Anthropic as an alternative selected via config.",
+      "when": "One deployed graph, caller chooses the provider per request.",
+      "openai": "from langchain_openai import ChatOpenAI\nfrom langchain_anthropic import ChatAnthropic\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\n\nmodel = ChatOpenAI(model=\"gpt-4o-mini\").configurable_alternatives(\n    \"model\",\n    default_key=\"openai\",\n    anthropic=ChatAnthropic(model=\"claude-3-5-haiku-latest\"),\n)\nchain = ChatPromptTemplate.from_template(\"{q}\") | model | StrOutputParser()\n\nchain.invoke({\"q\": \"Define LCEL\"}, config={\"configurable\": {\"model\": \"openai\"}})\nchain.invoke({\"q\": \"Define LCEL\"}, config={\"configurable\": {\"model\": \"anthropic\"}})\n",
+      "anthropic": "from langchain_openai import ChatOpenAI\nfrom langchain_anthropic import ChatAnthropic\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\n\n# Same graph \u2014 Anthropic selected at invoke time\nmodel = ChatOpenAI(model=\"gpt-4o-mini\").configurable_alternatives(\n    \"model\",\n    default_key=\"openai\",\n    anthropic=ChatAnthropic(model=\"claude-3-5-haiku-latest\"),\n)\nchain = ChatPromptTemplate.from_template(\"{q}\") | model | StrOutputParser()\nprint(chain.invoke({\"q\": \"Define LCEL\"}, config={\"configurable\": {\"model\": \"anthropic\"}}))\n",
+      "notes": "Great for A/B tests. Missing alternative keys raise at invoke, not at graph-build time."
+    },
+    {
+      "id": "graph",
+      "title": "get_graph() and get_prompts()",
+      "category": "Configuration",
+      "tags": [
+        "graph",
+        "debug",
+        "inspect"
+      ],
+      "summary": "Inspect a compiled LCEL chain: ASCII graph, prompts, and input schema.",
+      "when": "Debugging a pipe that 'should work' or generating docs for a chain.",
+      "openai": "from langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\n\nchain = (\n    ChatPromptTemplate.from_template(\"{q}\")\n    | ChatOpenAI(model=\"gpt-4o-mini\")\n    | StrOutputParser()\n)\nchain.get_graph().print_ascii()\nprint(chain.get_prompts())\nprint(chain.input_schema.model_json_schema())\n",
+      "anthropic": "from langchain_anthropic import ChatAnthropic\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\n\nchain = (\n    ChatPromptTemplate.from_template(\"{q}\")\n    | ChatAnthropic(model=\"claude-3-5-haiku-latest\")\n    | StrOutputParser()\n)\nchain.get_graph().print_ascii()\nprint(chain.get_prompts())\nprint(chain.input_schema.model_json_schema())\n",
+      "notes": "ASCII graphs are ideal for cheatsheets and code reviews. They work the same for both providers."
+    },
+    {
+      "id": "partial",
+      "title": "partial() \u2014 bake variables early",
+      "category": "Prompts & Models",
+      "tags": [
+        "partial",
+        "prompt",
+        "defaults"
+      ],
+      "summary": "Fill some template variables now, leave the rest for invoke.",
+      "when": "Shared system style, format instructions, or tenant-specific preamble.",
+      "openai": "from langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\n\nprompt = ChatPromptTemplate.from_template(\n    \"Style: {style}\\nUser: {q}\"\n).partial(style=\"terse bullet points\")\n\nchain = prompt | ChatOpenAI(model=\"gpt-4o-mini\") | StrOutputParser()\nprint(chain.invoke({\"q\": \"Name 3 LCEL primitives\"}))\n",
+      "anthropic": "from langchain_anthropic import ChatAnthropic\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\n\nprompt = ChatPromptTemplate.from_template(\n    \"Style: {style}\\nUser: {q}\"\n).partial(style=\"terse bullet points\")\n\nchain = prompt | ChatAnthropic(model=\"claude-3-5-haiku-latest\") | StrOutputParser()\nprint(chain.invoke({\"q\": \"Name 3 LCEL primitives\"}))\n",
+      "notes": "`partial` accepts values or callables (lazy). Useful for `get_format_instructions()`."
+    },
+    {
+      "id": "map",
+      "title": "map() \u2014 apply a chain per list item",
+      "category": "Parallelism",
+      "tags": [
+        "map",
+        "batch",
+        "list"
+      ],
+      "summary": "Turn a chain that handles one item into one that handles a list, concurrently.",
+      "when": "Summarize each retrieved chunk, or classify a batch of tickets.",
+      "openai": "from langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\n\none = (\n    ChatPromptTemplate.from_template(\"Tag this in 1 word: {text}\")\n    | ChatOpenAI(model=\"gpt-4o-mini\")\n    | StrOutputParser()\n)\nmany = one.map()\nprint(many.invoke([\n    {\"text\": \"pipe operator\"},\n    {\"text\": \"fallback chain\"},\n]))\n",
+      "anthropic": "from langchain_anthropic import ChatAnthropic\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\n\none = (\n    ChatPromptTemplate.from_template(\"Tag this in 1 word: {text}\")\n    | ChatAnthropic(model=\"claude-3-5-haiku-latest\")\n    | StrOutputParser()\n)\nmany = one.map()\nprint(many.invoke([{\"text\": \"pipe operator\"}, {\"text\": \"fallback chain\"}]))\n",
+      "notes": "Control fan-out with `config={'max_concurrency': 4}`. Different from `batch`, which maps over invoke inputs of the same chain."
+    }
+  ],
+  "quickRef": [
+    [
+      "`a | b | c`",
+      "RunnableSequence \u2014 left-to-right composition"
+    ],
+    [
+      "`{'k': r}` in a pipe",
+      "RunnableParallel \u2014 same input, concurrent branches"
+    ],
+    [
+      "`RunnablePassthrough()`",
+      "Forward input unchanged"
+    ],
+    [
+      "`.assign(k=r)`",
+      "Merge new keys into a dict input"
+    ],
+    [
+      "`.pick([...])`",
+      "Keep only listed keys"
+    ],
+    [
+      "`RunnableLambda(fn)` / `@chain`",
+      "Wrap a Python function"
+    ],
+    [
+      "`.bind(**kwargs)`",
+      "Freeze model/tool/stop kwargs"
+    ],
+    [
+      "`.bind_tools([fn])`",
+      "Advertise tools to the chat model"
+    ],
+    [
+      "`.with_structured_output(Model)`",
+      "Typed Pydantic/JSON result"
+    ],
+    [
+      "`.with_fallbacks([other])`",
+      "Try next Runnable on failure"
+    ],
+    [
+      "`.with_retry(...)`",
+      "Retry transient errors"
+    ],
+    [
+      "`.with_config({...})`",
+      "Default run name, tags, metadata"
+    ],
+    [
+      "`.configurable_alternatives`",
+      "Swap OpenAI/Anthropic at invoke time"
+    ],
+    [
+      "`.map()`",
+      "Apply chain to each list item"
+    ],
+    [
+      "`.invoke / .stream / .batch / .ainvoke`",
+      "Standard execution API"
+    ],
+    [
+      "`.get_graph().print_ascii()`",
+      "Debug the compiled graph"
+    ]
+  ]
+}
