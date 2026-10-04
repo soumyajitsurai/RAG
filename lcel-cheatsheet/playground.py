@@ -126,7 +126,7 @@ def run_llm(
     key = resolve_key(provider, openai_key, anthropic_key)
     if not key:
         return (
-            f"Add a {provider} API key in the Keys panel (or set "
+            f"Add an {provider} API key in the Keys panel (or set "
             f"{'OPENAI_API_KEY' if provider == 'OpenAI' else 'ANTHROPIC_API_KEY'} as a Space secret) to run this pattern.",
             "",
         )

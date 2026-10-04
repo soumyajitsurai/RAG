@@ -28,6 +28,8 @@ CSS = """
 #quick-table table { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.92rem; }
 """
 
+THEME = gr.themes.Soft(font=[gr.themes.GoogleFont("Source Sans 3"), "ui-sans-serif", "system-ui"])
+
 INTRO = """
 # LCEL Coding Cheatsheet
 Interactive **LangChain Expression Language** reference for **OpenAI** and **Anthropic**.
@@ -123,9 +125,7 @@ def build_demo() -> gr.Blocks:
         f"| {name} | {meaning} |" for name, meaning in QUICK_REF
     )
 
-    theme = gr.themes.Soft(font=[gr.themes.GoogleFont("Source Sans 3"), "ui-sans-serif", "system-ui"])
-
-    with gr.Blocks(theme=theme, css=CSS, title="LCEL Coding Cheatsheet") as demo:
+    with gr.Blocks(title="LCEL Coding Cheatsheet") as demo:
         with gr.Column(elem_id="col-container"):
             gr.Markdown(INTRO, elem_id="hero")
 
@@ -155,6 +155,7 @@ def build_demo() -> gr.Blocks:
                         choices=OPENAI_MODELS,
                         value=OPENAI_MODELS[0],
                         label="Playground model",
+                        allow_custom_value=True,
                     )
 
             with gr.Tabs():
@@ -287,4 +288,4 @@ Official docs: [LangChain](https://docs.langchain.com/) · [ChatOpenAI](https://
 demo = build_demo()
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(theme=THEME, css=CSS, ssr_mode=False)

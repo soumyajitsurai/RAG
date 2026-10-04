@@ -898,27 +898,24 @@ QUICK_REF = [
 
 def filter_entries(query: str = "", category: str = "All") -> list[dict[str, Any]]:
     q = (query or "").strip().lower()
-    out: list[dict[str, Any]] = []
+    scored: list[tuple[int, dict[str, Any]]] = []
     for entry in ENTRIES:
         if category not in ("All", "", None) and entry["category"] != category:
             continue
-        if q:
-            blob = " ".join(
-                [
-                    entry["id"],
-                    entry["title"],
-                    entry["category"],
-                    entry["summary"],
-                    entry["when"],
-                    " ".join(entry["tags"]),
-                    entry["openai"],
-                    entry["anthropic"],
-                ]
-            ).lower()
-            if q not in blob:
-                continue
-        out.append(entry)
-    return out
+        if not q:
+            scored.append((0, entry))
+            continue
+        title_blob = f"{entry['id']} {entry['title']} {' '.join(entry['tags'])}".lower()
+        meta_blob = f"{entry['summary']} {entry['when']} {entry['notes']} {entry['category']}".lower()
+        code_blob = f"{entry['openai']} {entry['anthropic']}".lower()
+        if q in title_blob:
+            scored.append((0, entry))
+        elif q in meta_blob:
+            scored.append((1, entry))
+        elif q in code_blob:
+            scored.append((2, entry))
+    scored.sort(key=lambda item: item[0])
+    return [entry for _, entry in scored]
 
 
 def by_id(entry_id: str) -> dict[str, Any] | None:

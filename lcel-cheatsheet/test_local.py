@@ -25,7 +25,8 @@ class CatalogTests(unittest.TestCase):
 
     def test_search_filters(self):
         hits = filter_entries("fallback", "All")
-        self.assertTrue(any(e["id"] == "fallbacks" for e in hits))
+        self.assertTrue(hits)
+        self.assertEqual(hits[0]["id"], "fallbacks")
         rag = filter_entries("", "RAG")
         self.assertTrue(rag)
         self.assertTrue(all(e["category"] == "RAG" for e in rag))
