@@ -1,3 +1,13 @@
+LCEL Coding Cheatsheet (Hugging Face Space)
+---------------------------------------
+Interactive LangChain Expression Language coding reference for OpenAI and Anthropic. Browse copy-paste LCEL snippets, run local Runnables without a key, and execute the same pipes against `ChatOpenAI` or `ChatAnthropic`.
+
+- App source: [`lcel-cheatsheet/`](lcel-cheatsheet/)
+- Live Space: https://huggingface.co/spaces/soumya-ai/lcel-coding-cheatsheet
+- Direct URL: https://soumya-ai-lcel-coding-cheatsheet.static.hf.space/
+- Redeploy: `cd lcel-cheatsheet && ./deploy_space.sh`
+- Local Gradio (optional): `cd lcel-cheatsheet && pip install -r requirements.txt && pip install gradio && python app.py`
+
 Problem Statement
 ---------------------------------------
 Business Context

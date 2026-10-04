@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LCEL Coding Cheatsheet · OpenAI & Anthropic</title>
+  <meta name="description" content="Interactive LangChain Expression Language reference for ChatOpenAI and ChatAnthropic." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <header class="hero">
+      <p class="eyebrow">LangChain Expression Language</p>
+      <h1>LCEL Coding Cheatsheet</h1>
+      <p class="lede">
+        Same pipe (<code>|</code>), same <code>invoke</code> / <code>stream</code> / <code>batch</code>.
+        Swap <code>ChatOpenAI</code> and <code>ChatAnthropic</code> without rewriting the graph.
+      </p>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="cheatsheet" type="button">Cheatsheet</button>
+      <button class="tab" data-tab="playground" type="button">Playground</button>
+      <button class="tab" data-tab="compare" type="button">Compare providers</button>
+      <button class="tab" data-tab="quick" type="button">Quick reference</button>
+    </nav>
+
+    <section id="panel-cheatsheet" class="panel active">
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="Search pipe, fallback, RAG, assign…" autocomplete="off" />
+        <select id="category"></select>
+        <fieldset class="segmented" id="provider-view">
+          <legend class="sr">Snippet view</legend>
+          <label><input type="radio" name="view" value="Both" checked /> Both</label>
+          <label><input type="radio" name="view" value="OpenAI" /> OpenAI</label>
+          <label><input type="radio" name="view" value="Anthropic" /> Anthropic</label>
+        </fieldset>
+        <p id="count" class="count"></p>
+      </div>
+      <div class="split">
+        <aside>
+          <label class="field-label" for="picker">Pattern</label>
+          <select id="picker" size="16"></select>
+        </aside>
+        <article>
+          <div id="meta" class="meta"></div>
+          <div id="code-grid" class="code-grid both"></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="panel-playground" class="panel">
+      <div class="grid-2">
+        <div>
+          <label class="field-label" for="play-pattern">Runnable pattern</label>
+          <select id="play-pattern"></select>
+          <p id="play-hint" class="hint"></p>
+          <label class="field-label" for="play-provider">Provider</label>
+          <select id="play-provider">
+            <option>OpenAI</option>
+            <option>Anthropic</option>
+          </select>
+          <label class="field-label" for="play-model">Model</label>
+          <select id="play-model"></select>
+          <label class="field-label" for="play-input">Input</label>
+          <textarea id="play-input" rows="4">What is LangChain Expression Language?</textarea>
+          <button id="play-run" class="primary" type="button">Run / generate</button>
+        </div>
+        <div>
+          <label class="field-label">Output</label>
+          <pre id="play-out" class="out"></pre>
+          <label class="field-label">Copy-paste LCEL</label>
+          <div class="code-wrap">
+            <button class="copy" type="button" data-target="play-code">Copy</button>
+            <pre><code id="play-code" class="language-python"></code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-compare" class="panel">
+      <p class="hint">Same prompt, two constructors. Copy either side into a notebook.</p>
+      <label class="field-label" for="cmp-input">Prompt</label>
+      <textarea id="cmp-input" rows="3">Explain RunnablePassthrough.assign in one sentence.</textarea>
+      <div class="grid-2">
+        <div>
+          <label class="field-label" for="cmp-openai">OpenAI model</label>
+          <select id="cmp-openai">
+            <option>gpt-4o-mini</option>
+            <option>gpt-4o</option>
+            <option>gpt-4.1-mini</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label" for="cmp-anthropic">Anthropic model</label>
+          <select id="cmp-anthropic">
+            <option>claude-3-5-haiku-latest</option>
+            <option>claude-3-5-sonnet-latest</option>
+            <option>claude-sonnet-4-0</option>
+          </select>
+        </div>
+      </div>
+      <button id="cmp-run" class="primary" type="button">Generate both snippets</button>
+      <div class="grid-2">
+        <div class="code-wrap">
+          <button class="copy" type="button" data-target="cmp-oai">Copy</button>
+          <pre><code id="cmp-oai"></code></pre>
+        </div>
+        <div class="code-wrap">
+          <button class="copy" type="button" data-target="cmp-ant">Copy</button>
+          <pre><code id="cmp-ant"></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-quick" class="panel">
+      <table class="ref">
+        <thead><tr><th>Primitive</th><th>Meaning</th></tr></thead>
+        <tbody id="quick-body"></tbody>
+      </table>
+      <div class="install">
+        <h3>Install</h3>
+        <pre><code>pip install langchain-core langchain-openai langchain-anthropic langchain
+export OPENAI_API_KEY=...
+export ANTHROPIC_API_KEY=...</code></pre>
+      </div>
+    </section>
+  </div>
+  <script src="app.js" type="module"></script>
+</body>
+</html>
